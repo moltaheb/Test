@@ -1,30 +1,25 @@
-# Pair Problem: Wookiee neighbors
+# Pair Problem
 
-Your rebel alliance team has been stranded on a remote planet in the Outer Rim. The memory banks of your ship have been wiped. You are the only surviving data scientist on the team.
+For today's pair, your goal is to predict whether or not a patient required surgery during their ICU stay based on their lab values and vital sign measurements.
 
-Your location is near several planets that are largely inhabited by wookiees. Unfortunately, the different tribes of wookiees have different attitudes toward the alliance. It's important that your team know which tribe (represented by the color of the wookiee) will be on a planet or ship before exiting warp nearby. If you end up near a hostile wookiee tribe, you may not have time to reactive your warp drive before things turn sour.
+The dataset is from the MIMIC database. Our target variable will be the `require_surgery_flag` column, which equals 1 if the patient required surgery during their ICU stay. The other variables will be used as predictors.
 
-The problem is that your databank is fried. Out of millions of ships and planets, you only know the location and color of a few hundred wookiee tribes.
+Go through the following steps.
 
-Your team turns to you, the only one on the team that is capable of harnessing the power of The Force (data science). However, all of your tools were destroyed in the memory bank failure: no neural networks, no support vector machines, no models of any kind.
+1. Load the dataset "MIMIC_Data_small.csv" into a dataframe. Set y = 'require_surgery_flag' and X = remaining columns.
+2. Split the data into train and test sets (80/20) with `random_state=42`
+3. Determine what is the "baseline" probability of requiring surgery in the ICU (looking only at the training set).
+4. We want to understand the relationship between the predictors and the target (looking only at the training set). Let's start with `resprate_mean`. What is the (empirical) probability of requiring surgery for patients with `resprate_mean` between 30 and 32? What about between 16 and 18? Between 6 and 12? What does this info tell you?
+5. Try to use the `hist` function to get bin counts and plot how the empirical probability changes with the value of `resprate_mean`.  Then do it for the other predictor variables. (Hint: see code snippet below)
+6. Before doing any logistic regression, guess which predictor variable you think will yield the best (single predictor) logistic regression model. Then run 6 logistic regression models - one for each variable. Was your prediction right?  Use the `log_loss` function in `sklearn.metrics` to measure model performance (the closer to 0, the better).
+7. Fit a logistic regression model using all of the variables. What is the `log_loss`?
 
-## Details
+Here is a code snippet that may be useful (on step 5 above):
 
-You must code, from scratch, a working KNN algorithm. Use the train-test split below to evaluate your model and then generate predictions for each of the observed wookiee ships in the holdout set.
+```
+fig, ax = plt.subplots(3, 1, figsize=(10, 12))  # 3 Rows, 1 Col
 
-- [train data](http://soph.info/metis/nyc18_ds15/wookiee-train.csv)
-- [test data](http://soph.info/metis/nyc18_ds15/wookiee-test.csv)
-- [holdout data](http://soph.info/metis/nyc18_ds15/wookiee-ho.csv)
-
-The data are also available in the [data folder](./data/).
-
-## Possible extensions:
-
- * Does your solution work for any number of features in the training data sets?
- * Does your solution handle ties?
- * Can you add another parameter, `k`, to your solution so that it uses the `k` nearest Wookiees instead of only the nearest Wookiee?
- * Can you add to your solution so that it has reasonable behavior if `y_train` is numeric?
-
-An extension of another kind:
-
- * Are you confident that your solution is correct? How can you ensure that it is, and check that it stays correct in the future?
+count0, bins_0, _ = ax[0].hist(X_train.loc[(y_train==0),'resprate_mean'], bins=25, range=(0,50))
+count1, bins_1, _ = ax[1].hist(X_train.loc[(y_train==1),'resprate_mean'], bins=25, range=(0,50))
+ax[2].plot((bins_0[:-1]+bins_0[1:])/2,count1/(count1 + count0))
+```
