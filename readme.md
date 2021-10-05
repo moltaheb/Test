@@ -1,25 +1,32 @@
 # Pair Problem
+Today, we design a new machine learning algorithm from scratch.
+This algorithm learns how to correct for the mistakes it's made in the past by training a series of "base learners" one by one.
 
-For today's pair, your goal is to predict whether or not a patient required surgery during their ICU stay based on their lab values and vital sign measurements.
-
-The dataset is from the MIMIC database. Our target variable will be the `require_surgery_flag` column, which equals 1 if the patient required surgery during their ICU stay. The other variables will be used as predictors.
-
-Go through the following steps.
-
-1. Load the dataset "MIMIC_Data_small.csv" into a dataframe. Set y = 'require_surgery_flag' and X = remaining columns.
-2. Split the data into train and test sets (80/20) with `random_state=42`
-3. Determine what is the "baseline" probability of requiring surgery in the ICU (looking only at the training set).
-4. We want to understand the relationship between the predictors and the target (looking only at the training set). Let's start with `resprate_mean`. What is the (empirical) probability of requiring surgery for patients with `resprate_mean` between 30 and 32? What about between 16 and 18? Between 6 and 12? What does this info tell you?
-5. Try to use the `hist` function to get bin counts and plot how the empirical probability changes with the value of `resprate_mean`.  Then do it for the other predictor variables. (Hint: see code snippet below)
-6. Before doing any logistic regression, guess which predictor variable you think will yield the best (single predictor) logistic regression model. Then run 6 logistic regression models - one for each variable. Was your prediction right?  Use the `log_loss` function in `sklearn.metrics` to measure model performance (the closer to 0, the better).
-7. Fit a logistic regression model using all of the variables. What is the `log_loss`?
-
-Here is a code snippet that may be useful (on step 5 above):
-
+1) Load the california housing data and do a train-test split as below:
 ```
-fig, ax = plt.subplots(3, 1, figsize=(10, 12))  # 3 Rows, 1 Col
+    import pandas as pd
 
-count0, bins_0, _ = ax[0].hist(X_train.loc[(y_train==0),'resprate_mean'], bins=25, range=(0,50))
-count1, bins_1, _ = ax[1].hist(X_train.loc[(y_train==1),'resprate_mean'], bins=25, range=(0,50))
-ax[2].plot((bins_0[:-1]+bins_0[1:])/2,count1/(count1 + count0))
+    from sklearn.datasets import fetch_california_housing
+    from sklearn.model_selection import train_test_split
+
+    housing_dataset = fetch_california_housing()
+    X = pd.DataFrame(housing_dataset.data)
+    X.columns = housing_dataset.feature_names
+    y = housing_dataset.target
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=2018)
 ```
+
+2) Ok that wasn't hard. Fit a simple linear regression on train and score it on test as a baseline.
+
+3) That also wasn't so bad. Now the hard part: create a python class or series of functions that follows the steps below to create a predictive model from training data **X, y and a hyperparameter n_estimators**.
+
+**A.** Set C = mean of y. This is our initial prediction, a constant prediction; track the current residuals y_i - C for all the target values
+
+**B.** Do the following n_estimators times: using sklearn DecisionTreeRegressor, fit a tree of max_depth 3 to (X, current residuals). Save the tree in a list, and update the residuals by subtracting the tree's predicted values on X from the current residuals.
+
+**C.** To make predictions on new data, you must sum the predictions made by all of the trees in your list, then add C. Fit your model on the training data and predict on the test data. Score your model on the test data. Try to get above .70 R^2. N_estimators = 10 is a good starting point to try.
+
+**D.** Time permitting, expand your model by adding hyperparameters **max_depth** that adjust the max_depth of each tree, as well as **learning_rate**. With learning rate, when you update the residuals subtract learning_rate * tree.predict(X) (what does this remind you of?) Also, when predicting multiply the predictions made by each tree by the learning_rate.
+
+Why do you think this works well? Where have we seen iterative mistake corrections with small step sizes come up before? Can you push your model to do even better?
